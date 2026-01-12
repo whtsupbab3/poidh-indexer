@@ -1,5 +1,5 @@
 import { ponder } from "ponder:registry";
-import { claims, users, leaderboard } from "../ponder.schema";
+import { claims, users, leaderboard } from "../../ponder.schema";
 import { and, eq, sql } from "ponder";
 
 const IGNORE_ADDRESSES = [
@@ -9,7 +9,7 @@ const IGNORE_ADDRESSES = [
   "0x0Aa50ce0d724cc28f8F7aF4630c32377B4d5c27d",
 ].map((address) => address.toLowerCase());
 
-ponder.on("PoidhNFTContract:Transfer", async ({ event, context }) => {
+ponder.on("PoidhNFTV2Contract:Transfer", async ({ event, context }) => {
   const database = context.db;
   const { to, tokenId, from } = event.args;
 
@@ -20,8 +20,8 @@ ponder.on("PoidhNFTContract:Transfer", async ({ event, context }) => {
   }
 
   const url = await context.client.readContract({
-    abi: context.contracts.PoidhNFTContract.abi,
-    address: context.contracts.PoidhNFTContract.address,
+    abi: context.contracts.PoidhNFTV2Contract.abi,
+    address: context.contracts.PoidhNFTV2Contract.address,
     functionName: "tokenURI",
     args: [tokenId],
     blockNumber: event.block.number,

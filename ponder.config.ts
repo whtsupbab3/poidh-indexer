@@ -23,7 +23,7 @@ export default createConfig({
     },
   },
   contracts: {
-    PoidhContract: {
+    PoidhV2Contract: {
       abi: PoidhV2ABI,
       chain: {
         base: {
@@ -40,7 +40,7 @@ export default createConfig({
         },
       },
     },
-    PoidhNFTContract: {
+    PoidhNFTV2Contract: {
       abi: PoidhV2NFTABI,
       chain: {
         base: {

@@ -14,27 +14,27 @@
     "redeploy": "railway redeploy"
   },
   "dependencies": {
-    "@hono/swagger-ui": "^0.5.0",
-    "@hono/zod-openapi": "^0.18.4",
-    "@hono/zod-validator": "^0.4.3",
-    "dotenv": "^17.2.2",
-    "drizzle-orm": "0.41.0",
-    "hono": "^4.7.0",
-    "hono-openapi": "^0.4.5",
+    "@hono/swagger-ui": "^0.5.3",
+    "@hono/zod-openapi": "^1.2.0",
+    "@hono/zod-validator": "^0.7.6",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "0.45.1",
+    "hono": "^4.11.4",
+    "hono-openapi": "^1.1.2",
     "pg": "^8.16.3",
-    "ponder": "^0.12.22",
-    "viem": "^2.23.1",
-    "zod": "^3.24.2",
-    "zod-openapi": "^4.2.3"
+    "ponder": "^0.16.1",
+    "viem": "^2.44.2",
+    "zod": "^4.3.5",
+    "zod-openapi": "^5.4.6"
   },
   "devDependencies": {
-    "@railway/cli": "^4.8.0",
-    "@types/node": "^20.17.17",
-    "@types/pg": "^8.15.5",
-    "eslint": "^8.57.1",
-    "eslint-config-ponder": "^0.6.26",
-    "tsx": "^4.20.5",
-    "typescript": "^5.7.3"
+    "@railway/cli": "^4.23.2",
+    "@types/node": "^25.0.7",
+    "@types/pg": "^8.16.0",
+    "eslint": "^9.39.2",
+    "eslint-config-ponder": "^0.16.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=18.14"

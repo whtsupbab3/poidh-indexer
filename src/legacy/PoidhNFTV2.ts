@@ -1,5 +1,5 @@
 import { ponder } from "ponder:registry";
-import { claims, users, leaderboard } from "../../ponder.schema";
+import { claims, users, leaderboard } from "ponder:schema";
 import { and, eq, sql } from "ponder";
 
 const IGNORE_ADDRESSES = [

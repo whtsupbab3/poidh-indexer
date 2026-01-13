@@ -1,4 +1,5 @@
 import { ponder } from "ponder:registry";
+import { sql } from "ponder";
 import {
   bounties,
   claims,
@@ -6,11 +7,14 @@ import {
   users,
   transactions,
   leaderboard,
-} from "../../ponder.schema";
+} from "ponder:schema";
+
 import { formatEther } from "viem";
-import { desc, sql } from "ponder";
+import { desc } from "drizzle-orm";
+
 import offchainDatabase from "../../offchain.database";
 import { priceTable } from "../../offchain.schema";
+
 import {
   getCreatorDisplayName,
   isLive,

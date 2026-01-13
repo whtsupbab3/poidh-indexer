@@ -1,9 +1,9 @@
 import { ponder } from "ponder:registry";
 import { claims, users, leaderboard } from "ponder:schema";
 import { and, eq, sql } from "ponder";
-import { IGNORE_ADDRESSES } from "../helpers/constants";
+import { IGNORE_ADDRESSES } from "./helpers/constants";
 
-ponder.on("PoidhNFTV2Contract:Transfer", async ({ event, context }) => {
+ponder.on("PoidhNFTContract:Transfer", async ({ event, context }) => {
   const database = context.db;
   const { to, tokenId, from } = event.args;
 
@@ -13,28 +13,14 @@ ponder.on("PoidhNFTV2Contract:Transfer", async ({ event, context }) => {
     await database.insert(users).values({ address: to }).onConflictDoNothing();
   }
 
-  const url = await context.client.readContract({
-    abi: context.contracts.PoidhNFTV2Contract.abi,
-    address: context.contracts.PoidhNFTV2Contract.address,
-    functionName: "tokenURI",
-    args: [tokenId],
-    blockNumber: event.block.number,
-  });
-
   await database
-    .insert(claims)
-    .values({
+    .update(claims, {
       id: Number(tokenId),
       chainId,
-      title: "",
-      description: "",
-      url,
-      bountyId: 0,
+    })
+    .set({
       owner: to,
       issuer: to,
-    })
-    .onConflictDoUpdate({
-      owner: to,
     });
 
   if (!IGNORE_ADDRESSES.includes(from.toLowerCase())) {

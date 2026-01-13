@@ -28,6 +28,23 @@ export const bounties = onchainTable(
   }),
 );
 
+export const votes = onchainTable(
+  "Votes",
+  (t) => ({
+    chainId: t.integer().notNull(),
+    bountyId: t.integer().notNull(),
+    claimId: t.integer().notNull(),
+    yes: t.integer().notNull(),
+    no: t.integer().notNull(),
+    round: t.integer().notNull(),
+  }),
+  (table) => ({
+    pk: primaryKey({
+      columns: [table.bountyId, table.chainId, table.round],
+    }),
+  }),
+);
+
 export const claims = onchainTable(
   "Claims",
   (t) => ({
@@ -119,6 +136,7 @@ export const transactions = onchainTable(
 export const bountiesRelations = relations(bounties, ({ many, one }) => ({
   claims: many(claims),
   participants: many(participationsBounties),
+  votes: many(votes),
   issuer: one(users, {
     fields: [bounties.issuer],
     references: [users.address],
@@ -157,8 +175,8 @@ export const participationsBountiesRelations = relations(
       references: [users.address],
     }),
     bounty: one(bounties, {
-      fields: [participationsBounties.bountyId],
-      references: [bounties.id],
+      fields: [participationsBounties.bountyId, participationsBounties.chainId],
+      references: [bounties.id, bounties.chainId],
     }),
   }),
 );
@@ -169,8 +187,8 @@ export const transactionRelations = relations(transactions, ({ one }) => ({
     references: [users.address],
   }),
   bounties: one(bounties, {
-    fields: [transactions.bountyId],
-    references: [bounties.id],
+    fields: [transactions.bountyId, transactions.chainId],
+    references: [bounties.id, bounties.chainId],
   }),
 }));
 
@@ -178,5 +196,12 @@ export const leaderboardRelations = relations(leaderboard, ({ one }) => ({
   user: one(users, {
     fields: [leaderboard.address],
     references: [users.address],
+  }),
+}));
+
+export const votesRelations = relations(votes, ({ one }) => ({
+  bounties: one(bounties, {
+    fields: [votes.bountyId, votes.chainId],
+    references: [bounties.id, bounties.chainId],
   }),
 }));

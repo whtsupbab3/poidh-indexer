@@ -21,7 +21,7 @@ const [price] = await offchainDatabase
   .orderBy(desc(priceTable.id))
   .limit(1);
 
-ponder.on("PoidhV2Contract:BountyCreated", async ({ event, context }) => {
+ponder.on("LegacyPoidhContract:BountyCreated", async ({ event, context }) => {
   const database = context.db;
   const { id, name, amount, issuer, description } = event.args;
   const { hash, transactionIndex } = event.transaction;
@@ -35,8 +35,8 @@ ponder.on("PoidhV2Contract:BountyCreated", async ({ event, context }) => {
   const isMultiplayer =
     (
       await context.client.readContract({
-        abi: context.contracts.PoidhV2Contract.abi,
-        address: context.contracts.PoidhV2Contract.address,
+        abi: context.contracts.LegacyPoidhContract.abi,
+        address: context.contracts.LegacyPoidhContract.address,
         functionName: "getParticipants",
         args: [id],
       })
@@ -78,7 +78,7 @@ ponder.on("PoidhV2Contract:BountyCreated", async ({ event, context }) => {
   });
 });
 
-ponder.on("PoidhV2Contract:BountyCancelled", async ({ event, context }) => {
+ponder.on("LegacyPoidhContract:BountyCancelled", async ({ event, context }) => {
   const database = context.db;
   const { bountyId, issuer } = event.args;
   const { hash, transactionIndex } = event.transaction;
@@ -105,7 +105,7 @@ ponder.on("PoidhV2Contract:BountyCancelled", async ({ event, context }) => {
   });
 });
 
-ponder.on("PoidhV2Contract:BountyJoined", async ({ event, context }) => {
+ponder.on("LegacyPoidhContract:BountyJoined", async ({ event, context }) => {
   const database = context.db;
   const { amount, participant, bountyId } = event.args;
   const { client, contracts } = context;
@@ -118,8 +118,8 @@ ponder.on("PoidhV2Contract:BountyJoined", async ({ event, context }) => {
     .onConflictDoNothing();
 
   const [_, __, deadline] = await client.readContract({
-    abi: contracts.PoidhV2Contract.abi,
-    address: contracts.PoidhV2Contract.address,
+    abi: contracts.LegacyPoidhContract.abi,
+    address: contracts.LegacyPoidhContract.address,
     functionName: "bountyVotingTracker",
     args: [bountyId],
   });
@@ -161,7 +161,7 @@ ponder.on("PoidhV2Contract:BountyJoined", async ({ event, context }) => {
 });
 
 ponder.on(
-  "PoidhV2Contract:WithdrawFromOpenBounty",
+  "LegacyPoidhContract:WithdrawFromOpenBounty",
   async ({ event, context }) => {
     const database = context.db;
     const { amount, participant, bountyId } = event.args;
@@ -202,7 +202,7 @@ ponder.on(
   },
 );
 
-ponder.on("PoidhV2Contract:ClaimCreated", async ({ event, context }) => {
+ponder.on("LegacyPoidhContract:ClaimCreated", async ({ event, context }) => {
   const database = context.db;
   const { bountyId, description, id, issuer, name } = event.args;
   const { hash, transactionIndex } = event.transaction;
@@ -223,7 +223,7 @@ ponder.on("PoidhV2Contract:ClaimCreated", async ({ event, context }) => {
       url: "",
       issuer,
       bountyId: Number(bountyId),
-      owner: context.contracts.PoidhV2Contract.address!,
+      owner: context.contracts.LegacyPoidhContract.address!,
     })
     .onConflictDoUpdate({
       title: name,
@@ -244,7 +244,7 @@ ponder.on("PoidhV2Contract:ClaimCreated", async ({ event, context }) => {
   });
 });
 
-ponder.on("PoidhV2Contract:ClaimAccepted", async ({ event, context }) => {
+ponder.on("LegacyPoidhContract:ClaimAccepted", async ({ event, context }) => {
   const database = context.db;
   const { claimId, claimIssuer } = event.args;
   const { hash, transactionIndex } = event.transaction;
@@ -321,44 +321,47 @@ ponder.on("PoidhV2Contract:ClaimAccepted", async ({ event, context }) => {
   );
 });
 
-ponder.on("PoidhV2Contract:ResetVotingPeriod", async ({ event, context }) => {
-  const database = context.db;
-  const { bountyId } = event.args;
-  const { client, contracts } = context;
-  const { hash, transactionIndex } = event.transaction;
-  const { timestamp } = event.block;
+ponder.on(
+  "LegacyPoidhContract:ResetVotingPeriod",
+  async ({ event, context }) => {
+    const database = context.db;
+    const { bountyId } = event.args;
+    const { client, contracts } = context;
+    const { hash, transactionIndex } = event.transaction;
+    const { timestamp } = event.block;
 
-  const [_, __, deadline] = await client.readContract({
-    abi: contracts.PoidhV2Contract.abi,
-    address: contracts.PoidhV2Contract.address,
-    functionName: "bountyVotingTracker",
-    args: [bountyId],
-  });
-
-  await database
-    .update(bounties, {
-      id: Number(bountyId),
-      chainId: context.chain.id,
-    })
-    .set({
-      deadline: Number(deadline),
-      isVoting: false,
-      inProgress: false,
+    const [_, __, deadline] = await client.readContract({
+      abi: contracts.LegacyPoidhContract.abi,
+      address: contracts.LegacyPoidhContract.address,
+      functionName: "bountyVotingTracker",
+      args: [bountyId],
     });
 
-  await database.insert(transactions).values({
-    index: transactionIndex,
-    tx: hash,
-    address: "0x0",
-    bountyId: Number(bountyId),
-    action: "voting reset period",
-    chainId: context.chain.id,
-    timestamp,
-  });
-});
+    await database
+      .update(bounties, {
+        id: Number(bountyId),
+        chainId: context.chain.id,
+      })
+      .set({
+        deadline: Number(deadline),
+        isVoting: false,
+        inProgress: false,
+      });
+
+    await database.insert(transactions).values({
+      index: transactionIndex,
+      tx: hash,
+      address: "0x0",
+      bountyId: Number(bountyId),
+      action: "voting reset period",
+      chainId: context.chain.id,
+      timestamp,
+    });
+  },
+);
 
 ponder.on(
-  "PoidhV2Contract:ClaimSubmittedForVote",
+  "LegacyPoidhContract:ClaimSubmittedForVote",
   async ({ event, context }) => {
     const database = context.db;
     const { bountyId, claimId } = event.args;
@@ -367,8 +370,8 @@ ponder.on(
     const { timestamp } = event.block;
 
     const [_, __, deadline] = await client.readContract({
-      abi: contracts.PoidhV2Contract.abi,
-      address: contracts.PoidhV2Contract.address,
+      abi: contracts.LegacyPoidhContract.abi,
+      address: contracts.LegacyPoidhContract.address,
       functionName: "bountyVotingTracker",
       args: [bountyId],
       blockNumber: event.block.number,
@@ -396,7 +399,7 @@ ponder.on(
   },
 );
 
-ponder.on("PoidhV2Contract:VoteClaim", async ({ event, context }) => {
+ponder.on("LegacyPoidhContract:VoteClaim", async ({ event, context }) => {
   const database = context.db;
   const { bountyId, claimId, voter } = event.args;
   const { client, contracts } = context;
@@ -404,8 +407,8 @@ ponder.on("PoidhV2Contract:VoteClaim", async ({ event, context }) => {
   const { timestamp } = event.block;
 
   const [_, __, deadline] = await client.readContract({
-    abi: contracts.PoidhV2Contract.abi,
-    address: contracts.PoidhV2Contract.address,
+    abi: contracts.LegacyPoidhContract.abi,
+    address: contracts.LegacyPoidhContract.address,
     functionName: "bountyVotingTracker",
     args: [bountyId],
     blockNumber: event.block.number,

@@ -2,6 +2,8 @@ import { createConfig } from "ponder";
 import { http } from "viem";
 import PoidhV2ABI from "./abis/PoidhV2Abi";
 import PoidhV2NFTABI from "./abis/PoidhV2NFTAbi";
+import { PoidhV3Abi } from "./abis/PoidhV3";
+import { PoidhClaimNFTAbi } from "./abis/PoidhClaimNFT";
 
 export default createConfig({
   ordering: "multichain",
@@ -23,7 +25,43 @@ export default createConfig({
     },
   },
   contracts: {
-    PoidhV2Contract: {
+    PoidhContract: {
+      abi: PoidhV3Abi,
+      chain: {
+        base: {
+          address: "0xF3872201171A0fF0a6e789627583E8036C41Baec",
+          startBlock: 40678285,
+        },
+        degen: {
+          address: "0x0285626130C127741C18C7730625ca624B727DC3",
+          startBlock: 26628691,
+        },
+        arbitrum: {
+          address: "0xF3872201171A0fF0a6e789627583E8036C41Baec",
+          startBlock: 420277040,
+        },
+      },
+    },
+
+    PoidhNFTContract: {
+      abi: PoidhClaimNFTAbi,
+      chain: {
+        base: {
+          address: "0x18E5585ca7cE31b90Bc8BB7aAf84152857cE243f",
+          startBlock: 40678285,
+        },
+        degen: {
+          address: "0xc43e1ab1f0e9daf37Ba532D06A9Fc713AA999A96",
+          startBlock: 26628691,
+        },
+        arbitrum: {
+          address: "0x18E5585ca7cE31b90Bc8BB7aAf84152857cE243f",
+          startBlock: 420277024,
+        },
+      },
+    },
+
+    LegacyPoidhContract: {
       abi: PoidhV2ABI,
       chain: {
         base: {
@@ -43,7 +81,8 @@ export default createConfig({
         },
       },
     },
-    PoidhNFTV2Contract: {
+
+    LegacyPoidhNFTContract: {
       abi: PoidhV2NFTABI,
       chain: {
         base: {

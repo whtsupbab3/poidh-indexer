@@ -1,0 +1,8 @@
+export const POIDH_BASE_URL = "https://poidh.xyz";
+
+export const IGNORE_ADDRESSES = [
+  "0x0000000000000000000000000000000000000000",
+  "0xb502c5856F7244DccDd0264A541Cc25675353D39",
+  "0x2445BfFc6aB9EEc6C562f8D7EE325CddF1780814",
+  "0x0Aa50ce0d724cc28f8F7aF4630c32377B4d5c27d",
+].map((address) => address.toLowerCase());

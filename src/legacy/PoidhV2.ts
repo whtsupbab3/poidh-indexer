@@ -15,14 +15,6 @@ import { desc } from "drizzle-orm";
 import offchainDatabase from "../../offchain.database";
 import { priceTable } from "../../offchain.schema";
 
-import {
-  getCreatorDisplayName,
-  isLive,
-  sendNotification,
-} from "../helpers/notifications";
-
-const POIDH_BASE_URL = "https://poidh.xyz";
-
 const [price] = await offchainDatabase
   .select()
   .from(priceTable)
@@ -84,16 +76,6 @@ ponder.on("PoidhV2Contract:BountyCreated", async ({ event, context }) => {
     chainId: context.chain.id,
     timestamp,
   });
-
-  if (amountSort >= 100 && isLive(event.block.timestamp)) {
-    const creatorName = await getCreatorDisplayName(issuer);
-    await sendNotification({
-      title: `💰 NEW $${amountSort.toFixed(0)} BOUNTY 💰`,
-      messageBody: `${name}${creatorName ? ` from ${creatorName}` : ""}`,
-      targetUrl: `${POIDH_BASE_URL}/${context.chain.name}/bounty/${id}`,
-      targetFIds: [],
-    });
-  }
 });
 
 ponder.on("PoidhV2Contract:BountyCancelled", async ({ event, context }) => {

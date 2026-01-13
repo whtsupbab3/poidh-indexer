@@ -29,14 +29,17 @@ export default createConfig({
         base: {
           address: "0xb502c5856F7244DccDd0264A541Cc25675353D39",
           startBlock: 14542727,
+          endBlock: 39265657,
         },
         degen: {
           address: "0x2445BfFc6aB9EEc6C562f8D7EE325CddF1780814",
           startBlock: 6991084,
+          endBlock: 26575631,
         },
         arbitrum: {
           address: "0x0Aa50ce0d724cc28f8F7aF4630c32377B4d5c27d",
           startBlock: 211898523,
+          endBlock: 409717812,
         },
       },
     },
@@ -46,14 +49,17 @@ export default createConfig({
         base: {
           address: "0xDdfb1A53E7b73Dba09f79FCA24765C593D447a80",
           startBlock: 14542570,
+          endBlock: 39565960,
         },
         degen: {
           address: "0xDdfb1A53E7b73Dba09f79FCA24765C593D447a80",
           startBlock: 4857281,
+          endBlock: 26575168,
         },
         arbitrum: {
           address: "0xDdfb1A53E7b73Dba09f79FCA24765C593D447a80",
           startBlock: 211898311,
+          endBlock: 406284950,
         },
       },
     },

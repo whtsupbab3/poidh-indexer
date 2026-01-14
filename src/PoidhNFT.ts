@@ -1,13 +1,17 @@
 import { ponder } from "ponder:registry";
 import { claims, users, leaderboard } from "ponder:schema";
 import { and, eq, sql } from "ponder";
-import { IGNORE_ADDRESSES } from "./helpers/constants";
+import {
+  IGNORE_ADDRESSES,
+  LATEST_CLAIMS_INDEX,
+} from "./helpers/constants";
 
 ponder.on("PoidhNFTContract:Transfer", async ({ event, context }) => {
   const database = context.db;
   const { to, tokenId, from } = event.args;
 
   const chainId = context.chain.id;
+  const newClaimId = LATEST_CLAIMS_INDEX[chainId] + Number(tokenId);
 
   if (!IGNORE_ADDRESSES.includes(to.toLowerCase())) {
     await database.insert(users).values({ address: to }).onConflictDoNothing();
@@ -15,7 +19,7 @@ ponder.on("PoidhNFTContract:Transfer", async ({ event, context }) => {
 
   await database
     .update(claims, {
-      id: Number(tokenId),
+      id: newClaimId,
       chainId,
     })
     .set({

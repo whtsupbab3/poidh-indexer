@@ -15,6 +15,10 @@ import { desc } from "drizzle-orm";
 
 import offchainDatabase from "../offchain.database";
 import { priceTable } from "../offchain.schema";
+import {
+  LATEST_BOUNTIES_INDEX,
+  LATEST_CLAIMS_INDEX,
+} from "./helpers/constants";
 
 const [price] = await offchainDatabase
   .select()
@@ -28,6 +32,7 @@ ponder.on("PoidhContract:BountyCreated", async ({ event, context }) => {
   const { hash, transactionIndex } = event.transaction;
   const { timestamp } = event.block;
   const chainId = context.chain.id;
+  const bountyId = LATEST_BOUNTIES_INDEX[chainId] + Number(id);
 
   await database
     .insert(users)
@@ -37,7 +42,7 @@ ponder.on("PoidhContract:BountyCreated", async ({ event, context }) => {
   const amountSort = Number(formatEther(amount)) * priceBasedOnChainId(chainId);
 
   await database.insert(bounties).values({
-    id: Number(id),
+    id: bountyId,
     chainId,
     title,
     createdAt: timestamp,
@@ -50,7 +55,7 @@ ponder.on("PoidhContract:BountyCreated", async ({ event, context }) => {
 
   await database.insert(participationsBounties).values({
     userAddress: issuer,
-    bountyId: Number(id),
+    bountyId,
     amount: amount.toString(),
     chainId,
   });
@@ -59,7 +64,7 @@ ponder.on("PoidhContract:BountyCreated", async ({ event, context }) => {
     index: transactionIndex,
     tx: hash,
     address: issuer,
-    bountyId: Number(id),
+    bountyId,
     action: `bounty created`,
     chainId,
     timestamp,
@@ -71,11 +76,14 @@ ponder.on("PoidhContract:BountyCancelled", async ({ event, context }) => {
   const { bountyId, issuer } = event.args;
   const { hash, transactionIndex } = event.transaction;
   const { timestamp } = event.block;
+  const chainId = context.chain.id;
+
+  const newBountyId = LATEST_BOUNTIES_INDEX[chainId] + Number(bountyId);
 
   await database
     .update(bounties, {
-      id: Number(bountyId),
-      chainId: context.chain.id,
+      id: newBountyId,
+      chainId,
     })
     .set({
       isCanceled: true,
@@ -86,9 +94,9 @@ ponder.on("PoidhContract:BountyCancelled", async ({ event, context }) => {
     index: transactionIndex,
     tx: hash,
     address: issuer,
-    bountyId: Number(bountyId),
+    bountyId: newBountyId,
     action: `bounty canceled`,
-    chainId: context.chain.id,
+    chainId,
     timestamp,
   });
 });
@@ -100,6 +108,8 @@ ponder.on("PoidhContract:BountyJoined", async ({ event, context }) => {
   const { timestamp } = event.block;
   const chainId = context.chain.id;
 
+  const newBountyId = LATEST_BOUNTIES_INDEX[chainId] + Number(bountyId);
+
   await database
     .insert(users)
     .values({ address: participant })
@@ -107,7 +117,7 @@ ponder.on("PoidhContract:BountyJoined", async ({ event, context }) => {
 
   await database
     .update(bounties, {
-      id: Number(bountyId),
+      id: newBountyId,
       chainId,
     })
     .set(() => ({
@@ -119,7 +129,7 @@ ponder.on("PoidhContract:BountyJoined", async ({ event, context }) => {
 
   await database.insert(participationsBounties).values({
     userAddress: participant,
-    bountyId: Number(bountyId),
+    bountyId: newBountyId,
     amount: amount.toString(),
     chainId,
   });
@@ -128,7 +138,7 @@ ponder.on("PoidhContract:BountyJoined", async ({ event, context }) => {
     index: transactionIndex,
     tx: hash,
     address: participant,
-    bountyId: Number(bountyId),
+    bountyId: newBountyId,
     action: `+${formatEther(amount)} ${
       context.chain.name === "degen" ? "degen" : "eth"
     }`,
@@ -146,9 +156,11 @@ ponder.on(
     const { timestamp } = event.block;
     const chainId = context.chain.id;
 
+    const newBountyId = LATEST_BOUNTIES_INDEX[chainId] + Number(bountyId);
+
     await database
       .update(bounties, {
-        id: Number(bountyId),
+        id: newBountyId,
         chainId,
       })
       .set((raw) => ({
@@ -159,7 +171,7 @@ ponder.on(
       }));
 
     await database.delete(participationsBounties, {
-      bountyId: Number(bountyId),
+      bountyId: newBountyId,
       userAddress: participant,
       chainId,
     });
@@ -168,7 +180,7 @@ ponder.on(
       index: transactionIndex,
       tx: hash,
       address: participant,
-      bountyId: Number(bountyId),
+      bountyId: newBountyId,
       action: `-${formatEther(amount)} ${
         context.chain.name === "degen" ? "degen" : "eth"
       }`,
@@ -185,6 +197,9 @@ ponder.on("PoidhContract:ClaimCreated", async ({ event, context }) => {
   const { timestamp } = event.block;
   const chainId = context.chain.id;
 
+  const newBountyId = LATEST_BOUNTIES_INDEX[chainId] + Number(bountyId);
+  const newClaimId = LATEST_CLAIMS_INDEX[chainId] + Number(id);
+
   await database
     .insert(users)
     .values({ address: issuer })
@@ -193,9 +208,9 @@ ponder.on("PoidhContract:ClaimCreated", async ({ event, context }) => {
   await database
     .insert(claims)
     .values({
-      id: Number(id),
+      id: newClaimId,
       chainId,
-      bountyId: Number(bountyId),
+      bountyId: newBountyId,
       title,
       description,
       url: imageUri,
@@ -203,7 +218,7 @@ ponder.on("PoidhContract:ClaimCreated", async ({ event, context }) => {
       owner: context.contracts.PoidhContract.address!,
     })
     .onConflictDoUpdate({
-      bountyId: Number(bountyId),
+      bountyId: newBountyId,
       title,
       description,
       issuer,
@@ -214,8 +229,8 @@ ponder.on("PoidhContract:ClaimCreated", async ({ event, context }) => {
     index: transactionIndex,
     tx: hash,
     address: issuer,
-    bountyId: Number(bountyId),
-    claimId: Number(id),
+    bountyId: newBountyId,
+    claimId: newClaimId,
     action: "claim created",
     chainId,
     timestamp,
@@ -228,12 +243,13 @@ ponder.on("PoidhContract:ClaimAccepted", async ({ event, context }) => {
   const { hash, transactionIndex } = event.transaction;
   const { timestamp } = event.block;
 
-  const bountyId = Number(event.args.bountyId);
   const chainId = context.chain.id;
+  const bountyId = LATEST_BOUNTIES_INDEX[chainId] + Number(event.args.bountyId);
+  const newClaimId = LATEST_CLAIMS_INDEX[chainId] + Number(claimId);
 
   await database
     .update(claims, {
-      id: Number(claimId),
+      id: newClaimId,
       chainId,
     })
     .set({
@@ -308,9 +324,11 @@ ponder.on("PoidhContract:VotingResolved", async ({ event, context }) => {
   const { timestamp } = event.block;
   const chainId = context.chain.id;
 
+  const newBountyId = LATEST_BOUNTIES_INDEX[chainId] + Number(bountyId);
+
   await database
     .update(bounties, {
-      id: Number(bountyId),
+      id: newBountyId,
       chainId,
     })
     .set({
@@ -322,7 +340,7 @@ ponder.on("PoidhContract:VotingResolved", async ({ event, context }) => {
     index: transactionIndex,
     tx: hash,
     address: "0x0",
-    bountyId: Number(bountyId),
+    bountyId: newBountyId,
     action: "voting reset period",
     chainId,
     timestamp,
@@ -336,9 +354,12 @@ ponder.on("PoidhContract:VotingStarted", async ({ event, context }) => {
   const { timestamp } = event.block;
   const chainId = context.chain.id;
 
+  const newBountyId = LATEST_BOUNTIES_INDEX[chainId] + Number(bountyId);
+  const newClaimId = LATEST_CLAIMS_INDEX[chainId] + Number(claimId);
+
   await database
     .update(bounties, {
-      id: Number(bountyId),
+      id: newBountyId,
       chainId,
     })
     .set({
@@ -347,9 +368,9 @@ ponder.on("PoidhContract:VotingStarted", async ({ event, context }) => {
     });
 
   await database.insert(votes).values({
-    bountyId: Number(bountyId),
+    bountyId: newBountyId,
     chainId,
-    claimId: Number(claimId),
+    claimId: newClaimId,
     no: 0,
     yes: 0,
     round: Number(round),
@@ -359,8 +380,8 @@ ponder.on("PoidhContract:VotingStarted", async ({ event, context }) => {
     index: transactionIndex,
     tx: hash,
     address: "0x0",
-    bountyId: Number(bountyId),
-    action: `${claimId} submitted for vote`,
+    bountyId: newBountyId,
+    action: `${newClaimId} submitted for vote`,
     chainId,
     timestamp,
   });
@@ -373,15 +394,17 @@ ponder.on("PoidhContract:VoteCast", async ({ event, context }) => {
   const { timestamp } = event.block;
   const chainId = context.chain.id;
 
+  const newBountyId = LATEST_BOUNTIES_INDEX[chainId] + Number(bountyId);
+
   const latestVoteRound = await database.sql.query.votes.findFirst({
     where: (table, { and, eq }) =>
-      and(eq(table.bountyId, Number(bountyId)), eq(table.chainId, chainId)),
+      and(eq(table.bountyId, newBountyId), eq(table.chainId, chainId)),
     orderBy: (table, { desc }) => [desc(table.round)],
   });
 
   await database
     .update(votes, {
-      bountyId: Number(bountyId),
+      bountyId: newBountyId,
       chainId,
       round: latestVoteRound!.round,
     })
@@ -394,9 +417,9 @@ ponder.on("PoidhContract:VoteCast", async ({ event, context }) => {
     index: transactionIndex,
     tx: hash,
     address: voter,
-    bountyId: Number(bountyId),
+    bountyId: newBountyId,
     action: `voted`,
-    chainId: context.chain.id,
+    chainId,
     timestamp,
   });
 });

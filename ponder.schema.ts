@@ -5,6 +5,7 @@ export const bounties = onchainTable(
   (t) => ({
     id: t.integer().notNull(),
     chainId: t.integer().notNull(),
+    onChainId: t.integer().notNull(),
 
     createdAt: t.bigint().notNull(),
     title: t.text().notNull(),
@@ -25,6 +26,7 @@ export const bounties = onchainTable(
       columns: [table.id, table.chainId],
     }),
     chain_idx: index().on(table.chainId),
+    onChainId_idx: index().on(table.onChainId),
   }),
 );
 
@@ -50,6 +52,7 @@ export const claims = onchainTable(
   (t) => ({
     id: t.integer().notNull(),
     chainId: t.integer().notNull(),
+    onChainId: t.integer().notNull(),
 
     title: t.text().notNull(),
     description: t.text().notNull(),
@@ -68,6 +71,7 @@ export const claims = onchainTable(
     chain_idx: index().on(table.chainId),
     bounty_idx: index().on(table.bountyId),
     owner_idx: index().on(table.owner),
+    onChainId_idx: index().on(table.onChainId),
   }),
 );
 

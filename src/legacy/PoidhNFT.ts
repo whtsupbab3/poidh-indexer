@@ -26,6 +26,7 @@ ponder.on("LegacyPoidhNFTContract:Transfer", async ({ event, context }) => {
     .values({
       id: Number(tokenId),
       chainId,
+      onChainId: Number(tokenId),
       title: "",
       description: "",
       url,
@@ -35,6 +36,7 @@ ponder.on("LegacyPoidhNFTContract:Transfer", async ({ event, context }) => {
     })
     .onConflictDoUpdate({
       owner: to,
+      onChainId: Number(tokenId),
     });
 
   if (!IGNORE_ADDRESSES.includes(from.toLowerCase())) {

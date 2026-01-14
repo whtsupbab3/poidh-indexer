@@ -25,6 +25,7 @@ ponder.on("PoidhNFTContract:Transfer", async ({ event, context }) => {
     .set({
       owner: to,
       issuer: to,
+      onChainId: Number(tokenId),
     });
 
   if (!IGNORE_ADDRESSES.includes(from.toLowerCase())) {

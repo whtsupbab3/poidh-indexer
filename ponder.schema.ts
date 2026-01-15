@@ -79,6 +79,9 @@ export const users = onchainTable(
   "Users",
   (t) => ({
     address: t.hex().notNull(),
+    withdrawalAmountDegen: t.real().default(0),
+    withdrawalAmountBase: t.real().default(0),
+    withdrawalAmountArbitrum: t.real().default(0),
   }),
   (table) => ({
     pk: primaryKey({ columns: [table.address] }),

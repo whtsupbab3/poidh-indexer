@@ -16,6 +16,7 @@ import { desc } from "drizzle-orm";
 import offchainDatabase from "../offchain.database";
 import { priceTable } from "../offchain.schema";
 import {
+  ChainId,
   LATEST_BOUNTIES_INDEX,
   LATEST_CLAIMS_INDEX,
 } from "./helpers/constants";
@@ -74,7 +75,7 @@ ponder.on("PoidhContract:BountyCreated", async ({ event, context }) => {
 
 ponder.on("PoidhContract:BountyCancelled", async ({ event, context }) => {
   const database = context.db;
-  const { bountyId, issuer } = event.args;
+  const { bountyId, issuer, issuerRefund } = event.args;
   const { hash, transactionIndex } = event.transaction;
   const { timestamp } = event.block;
   const chainId = context.chain.id;
@@ -101,6 +102,16 @@ ponder.on("PoidhContract:BountyCancelled", async ({ event, context }) => {
     chainId,
     timestamp,
   });
+
+  await database
+    .insert(users)
+    .values({
+      address: issuer,
+      ...updatePriceBasedOnChainId(null, chainId, issuerRefund),
+    })
+    .onConflictDoUpdate((row) =>
+      updatePriceBasedOnChainId(row, chainId, issuerRefund),
+    );
 });
 
 ponder.on("PoidhContract:BountyJoined", async ({ event, context }) => {
@@ -191,6 +202,16 @@ ponder.on(
       chainId,
       timestamp,
     });
+
+    await database
+      .insert(users)
+      .values({
+        address: participant,
+        ...updatePriceBasedOnChainId(null, chainId, amount),
+      })
+      .onConflictDoUpdate((row) =>
+        updatePriceBasedOnChainId(row, chainId, amount),
+      );
   },
 );
 
@@ -245,7 +266,7 @@ ponder.on("PoidhContract:ClaimCreated", async ({ event, context }) => {
 
 ponder.on("PoidhContract:ClaimAccepted", async ({ event, context }) => {
   const database = context.db;
-  const { claimId, bountyIssuer, claimIssuer } = event.args;
+  const { claimId, bountyIssuer, claimIssuer, payout } = event.args;
   const { hash, transactionIndex } = event.transaction;
   const { timestamp } = event.block;
 
@@ -263,6 +284,16 @@ ponder.on("PoidhContract:ClaimAccepted", async ({ event, context }) => {
       isAccepted: true,
       onChainId: Number(claimId),
     });
+
+  await database
+    .insert(users)
+    .values({
+      address: claimIssuer,
+      ...updatePriceBasedOnChainId(null, chainId, payout),
+    })
+    .onConflictDoUpdate((row) =>
+      updatePriceBasedOnChainId(row, chainId, payout),
+    );
 
   const bounty = await database
     .update(bounties, {
@@ -435,8 +466,96 @@ ponder.on("PoidhContract:VoteCast", async ({ event, context }) => {
   });
 });
 
+ponder.on("PoidhContract:RefundClaimed", async ({ event, context }) => {
+  const { amount, participant } = event.args;
+  const chainId = context.chain.id;
+  const database = context.db;
+
+  await database
+    .insert(users)
+    .values({
+      address: participant,
+      ...updatePriceBasedOnChainId(null, chainId, amount),
+    })
+    .onConflictDoUpdate((row) =>
+      updatePriceBasedOnChainId(row, chainId, amount),
+    );
+});
+
+ponder.on("PoidhContract:Withdrawal", async ({ event, context }) => {
+  const { user } = event.args;
+  const chainId = context.chain.id;
+  const database = context.db;
+
+  await database
+    .insert(users)
+    .values({
+      address: user,
+      ...withdrawBasedOnChainId(chainId),
+    })
+    .onConflictDoUpdate(withdrawBasedOnChainId(chainId));
+});
+
+ponder.on("PoidhContract:WithdrawalTo", async ({ event, context }) => {
+  const { to } = event.args;
+  const chainId = context.chain.id;
+  const database = context.db;
+
+  await database
+    .insert(users)
+    .values({
+      address: to,
+      ...withdrawBasedOnChainId(chainId),
+    })
+    .onConflictDoUpdate(withdrawBasedOnChainId(chainId));
+});
+
 function priceBasedOnChainId(chainId: number) {
   return chainId === 666666666
     ? Number(price!.degen_usd)
     : Number(price!.eth_usd);
+}
+
+function updatePriceBasedOnChainId(
+  row: {
+    address: `0x${string}`;
+    withdrawalAmountDegen: number | null;
+    withdrawalAmountBase: number | null;
+    withdrawalAmountArbitrum: number | null;
+  } | null,
+  chainId: ChainId,
+  payout: bigint,
+) {
+  const amountParsed = Number(formatEther(payout));
+
+  if (chainId === 8453) {
+    return {
+      withdrawalAmountBase: (row?.withdrawalAmountBase ?? 0) + amountParsed,
+    };
+  }
+  if (chainId === 666666666) {
+    return {
+      withdrawalAmountDegen: (row?.withdrawalAmountDegen ?? 0) + amountParsed,
+    };
+  }
+  return {
+    withdrawalAmountArbitrum:
+      (row?.withdrawalAmountArbitrum ?? 0) + amountParsed,
+  };
+}
+
+function withdrawBasedOnChainId(chainId: ChainId) {
+  if (chainId === 8453) {
+    return {
+      withdrawalAmountBase: 0,
+    };
+  }
+  if (chainId === 666666666) {
+    return {
+      withdrawalAmountDegen: 0,
+    };
+  }
+  return {
+    withdrawalAmountArbitrum: 0,
+  };
 }

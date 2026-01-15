@@ -22,15 +22,10 @@ const API_SECRET = process.env.SERVER_SECRET;
 const RAILWAY_TOKEN = process.env.RAILWAY_TOKEN;
 const SERVICE_ID = process.env.RAILWAY_SERVICE_ID;
 
-app.get(
-  "/swagger",
-  swaggerUI({ url: "/openapi/doc" }),
-);
+app.get("/swagger", swaggerUI({ url: "/openapi/doc" }));
 
 app.get("/bounty/:chainId", async (c) => {
-  const chainId = Number(
-    c.req.param("chainId") ?? 0,
-  );
+  const chainId = Number(c.req.param("chainId") ?? 0);
 
   const bounties = await db
     .select()
@@ -41,229 +36,61 @@ app.get("/bounty/:chainId", async (c) => {
   return c.json(bounties);
 });
 
-app.post("/updatePrice", async (c) => {
-  const providedKey = c.req.header("x-api-key");
-  const providedSignature = c.req.header(
-    "x-signature",
-  );
-  const timestamp = c.req.header("x-timestamp");
-  const body = await c.req.parseBody();
+app.get("/bounty/:chainId/:bountyId", async (c) => {
+  const chainId = Number(c.req.param("chainId") ?? 0);
+  const bountyId = Number(c.req.param("bountyId"));
 
-  if (
-    !providedKey ||
-    !providedSignature ||
-    !timestamp
-  ) {
-    return c.json({ error: "Missing headers" });
-  }
-
-  if (!API_KEY || !API_SECRET) {
-    return c.json({
-      error: "API key or API secret is missing",
-    });
-  }
-
-  if (!RAILWAY_TOKEN || !SERVICE_ID) {
-    return c.json({
-      error: "Server needs configuration",
-    });
-  }
-
-  if (
-    Math.abs(
-      Date.now() / 1000 - parseInt(timestamp),
-    ) > 300
-  ) {
-    return c.json({ error: "Request expired" });
-  }
-
-  const canonical = `${c.req.method}|${c.req.path}|${timestamp}|${JSON.stringify(body)}`;
-
-  const hmac = crypto.createHmac(
-    "sha256",
-    API_SECRET,
-  );
-  const expectedSignature = hmac
-    .update(canonical)
-    .digest("hex");
-
-  if (
-    providedKey !== API_KEY ||
-    providedSignature !== expectedSignature
-  ) {
-    return c.json({
-      error: "Invalid credentials",
-    });
-  }
-
-  const [latestPrice] = await database
+  const bounty = await db
     .select()
-    .from(priceTable)
-    .orderBy(desc(priceTable.id))
-    .limit(1);
-
-  const [currentPriceETH, currentPriceDegen] =
-    await Promise.all([
-      fetchPrice({
-        currency: "eth",
-      }),
-      fetchPrice({
-        currency: "degen",
-      }),
-    ]);
-
-  const percent = ({
-    current,
-    previous,
-  }: {
-    current: number;
-    previous: number;
-  }) => {
-    if (previous === 0) {
-      return 0;
-    }
-    return Math.abs(
-      ((current - previous) / previous) * 100,
-    );
-  };
-
-  const shouldUpdatePrice =
-    !latestPrice ||
-    percent({
-      current: currentPriceETH,
-      previous: Number(latestPrice.eth_usd),
-    }) > 3 ||
-    percent({
-      current: currentPriceDegen,
-      previous: Number(latestPrice.degen_usd),
-    }) > 3 ||
-    Number(latestPrice.eth_usd) === 0 ||
-    Number(latestPrice.eth_usd) === 0;
-
-  if (!shouldUpdatePrice) {
-    return c.json({
-      message: "Nothing to update",
-    });
-  }
-
-  await database.insert(priceTable).values({
-    eth_usd: currentPriceETH.toString(),
-    degen_usd: currentPriceDegen.toString(),
-  });
-
-  setTimeout(() => {
-    console.log(
-      "Server will be restarted in 5 seconds",
+    .from(schema.bounties)
+    .where(
+      and(
+        eq(schema.bounties.chainId, chainId),
+        eq(schema.bounties.id, bountyId),
+      ),
     );
 
-    exec(
-      `RAILWAY_TOKEN=${RAILWAY_TOKEN} pnpm redeploy --service ${SERVICE_ID} --yes`,
-      (error, stdout, stderr) => {
-        if (error) {
-          console.error(
-            `Error: ${error.message}`,
-          );
-          return;
-        }
-        if (stderr) {
-          console.error(`Stderr: ${stderr}`);
-          return;
-        }
-        console.log(`Output:\n${stdout}`);
-      },
-    );
-  }, 5000);
-
-  return c.json({
-    message: "Restarting server…",
-  });
+  return c.json(bounty[0]);
 });
 
-app.get(
-  "/bounty/:chainId/:bountyId",
-  async (c) => {
-    const chainId = Number(
-      c.req.param("chainId") ?? 0,
-    );
-    const bountyId = Number(
-      c.req.param("bountyId"),
-    );
+app.get("/bounty/participations/:chainId/:bountyId", async (c) => {
+  const chainId = Number(c.req.param("chainId") ?? 0);
+  const bountyId = Number(c.req.param("bountyId"));
 
-    const bounty = await db
-      .select()
-      .from(schema.bounties)
-      .where(
-        and(
-          eq(schema.bounties.chainId, chainId),
-          eq(schema.bounties.id, bountyId),
-        ),
-      );
-
-    return c.json(bounty[0]);
-  },
-);
-
-app.get(
-  "/bounty/participations/:chainId/:bountyId",
-  async (c) => {
-    const chainId = Number(
-      c.req.param("chainId") ?? 0,
-    );
-    const bountyId = Number(
-      c.req.param("bountyId"),
+  const participations = await db
+    .select()
+    .from(schema.participationsBounties)
+    .where(
+      and(
+        eq(schema.participationsBounties.bountyId, bountyId),
+        eq(schema.participationsBounties.chainId, chainId),
+      ),
     );
 
-    const participations = await db
-      .select()
-      .from(schema.participationsBounties)
-      .where(
-        and(
-          eq(
-            schema.participationsBounties
-              .bountyId,
-            bountyId,
-          ),
-          eq(
-            schema.participationsBounties.chainId,
-            chainId,
-          ),
-        ),
-      );
+  return c.json(participations);
+});
 
-    return c.json(participations);
-  },
-);
+app.get("/bounty/claims/:chainId/:bountyId", async (c) => {
+  const chainId = Number(c.req.param("chainId") ?? 0);
 
-app.get(
-  "/bounty/claims/:chainId/:bountyId",
-  async (c) => {
-    const chainId = Number(
-      c.req.param("chainId") ?? 0,
-    );
+  const bountyId = Number(c.req.param("bountyId") ?? 0);
 
-    const bountyId = Number(
-      c.req.param("bountyId") ?? 0,
-    );
+  const claims = await db
+    .select()
+    .from(schema.claims)
+    .where(
+      and(
+        eq(schema.claims.chainId, chainId),
+        eq(schema.claims.bountyId, bountyId),
+      ),
+    )
+    .orderBy((claim) => claim.id);
 
-    const claims = await db
-      .select()
-      .from(schema.claims)
-      .where(
-        and(
-          eq(schema.claims.chainId, chainId),
-          eq(schema.claims.bountyId, bountyId),
-        ),
-      )
-      .orderBy((claim) => claim.id);
-
-    return c.json(claims);
-  },
-);
+  return c.json(claims);
+});
 
 app.get("/live/bounty/:chainId", async (c) => {
-  const chainId = Number(
-    c.req.param("chainId") ?? 0,
-  );
+  const chainId = Number(c.req.param("chainId") ?? 0);
   const bounty = await db
     .select()
     .from(schema.bounties)
@@ -279,9 +106,7 @@ app.get("/live/bounty/:chainId", async (c) => {
 });
 
 app.get("/voting/bounty/:chainId", async (c) => {
-  const chainId = Number(
-    c.req.param("chainId") ?? 0,
-  );
+  const chainId = Number(c.req.param("chainId") ?? 0);
 
   const bounty = await db
     .select()
@@ -298,9 +123,7 @@ app.get("/voting/bounty/:chainId", async (c) => {
 });
 
 app.get("/past/bounty/:chainId", async (c) => {
-  const chainId = Number(
-    c.req.param("chainId") ?? 0,
-  );
+  const chainId = Number(c.req.param("chainId") ?? 0);
 
   const bounty = await db
     .select()
@@ -317,9 +140,7 @@ app.get("/past/bounty/:chainId", async (c) => {
 });
 
 app.get("/claim/:chainId", async (c) => {
-  const chainId = Number(
-    c.req.param("chainId") ?? 0,
-  );
+  const chainId = Number(c.req.param("chainId") ?? 0);
 
   const claims = await db
     .select()
@@ -331,19 +152,14 @@ app.get("/claim/:chainId", async (c) => {
 });
 
 app.get("/claim/:chainId/:claimId", async (c) => {
-  const chainId = Number(
-    c.req.param("chainId") ?? 0,
-  );
+  const chainId = Number(c.req.param("chainId") ?? 0);
   const claimId = Number(c.req.param("claimId"));
 
   const claim = await db
     .select()
     .from(schema.claims)
     .where(
-      and(
-        eq(schema.claims.chainId, chainId),
-        eq(schema.claims.id, claimId),
-      ),
+      and(eq(schema.claims.chainId, chainId), eq(schema.claims.id, claimId)),
     );
 
   return c.json(claim[0]);

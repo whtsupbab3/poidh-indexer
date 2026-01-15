@@ -277,6 +277,7 @@ ponder.on("LegacyPoidhContract:ClaimAccepted", async ({ event, context }) => {
     })
     .set({
       inProgress: false,
+      isCanceled: false,
       onChainId: Number(bountyId),
     });
 

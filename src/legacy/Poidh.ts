@@ -59,6 +59,7 @@ ponder.on("LegacyPoidhContract:BountyCreated", async ({ event, context }) => {
     amountSort,
     issuer,
     isMultiplayer,
+    isCanceled: true,
   });
 
   await database.insert(participationsBounties).values({
@@ -350,13 +351,12 @@ ponder.on(
         id: Number(bountyId),
         chainId: context.chain.id,
       })
-    .set({
-      deadline: Number(deadline),
-      isVoting: false,
-      inProgress: false,
-      onChainId: Number(bountyId),
-    });
-
+      .set({
+        deadline: Number(deadline),
+        isVoting: false,
+        inProgress: false,
+        onChainId: Number(bountyId),
+      });
 
     await database.insert(transactions).values({
       index: transactionIndex,
@@ -392,12 +392,11 @@ ponder.on(
         id: Number(bountyId),
         chainId: context.chain.id,
       })
-    .set({
-      isVoting: true,
-      deadline: Number(deadline),
-      onChainId: Number(bountyId),
-    });
-
+      .set({
+        isVoting: true,
+        deadline: Number(deadline),
+        onChainId: Number(bountyId),
+      });
 
     await database.insert(transactions).values({
       index: transactionIndex,

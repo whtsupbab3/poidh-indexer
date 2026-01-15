@@ -6,7 +6,7 @@ export const BASE_LAST_BOUNTY = 986;
 
 export const ARBITRUM_LAST_CLAIM = 435;
 export const DEGEN_LAST_CLAIM = 4533;
-export const BASE_LAST_CLAIM = 5280;
+export const BASE_LAST_CLAIM = 5317;
 
 export type ChainId = 42161 | 8453 | 666666666;
 

@@ -4,12 +4,6 @@ import { Hono } from "hono";
 import { and, eq, graphql } from "ponder";
 import { openAPI } from "./openAPI";
 import { swaggerUI } from "@hono/swagger-ui";
-import { desc } from "drizzle-orm";
-import database from "../../offchain.database";
-import { priceTable } from "../../offchain.schema";
-import { fetchPrice } from "../helpers/price";
-import crypto from "crypto";
-import { exec } from "child_process";
 
 const app = new Hono();
 
@@ -17,12 +11,18 @@ app.route("/openapi", openAPI);
 
 app.use("/graphql", graphql({ db, schema }));
 
-const API_KEY = process.env.SERVER_API_KEY;
-const API_SECRET = process.env.SERVER_SECRET;
-const RAILWAY_TOKEN = process.env.RAILWAY_TOKEN;
-const SERVICE_ID = process.env.RAILWAY_SERVICE_ID;
-
 app.get("/swagger", swaggerUI({ url: "/openapi/doc" }));
+
+app.get("/deployment_id", async (c) => {
+  const deploymentId = process.env.RAILWAY_DEPLOYMENT_ID;
+  if (!deploymentId) {
+    return c.status(404);
+  }
+
+  return c.json({
+    deploymentId,
+  });
+});
 
 app.get("/bounty/:chainId", async (c) => {
   const chainId = Number(c.req.param("chainId") ?? 0);

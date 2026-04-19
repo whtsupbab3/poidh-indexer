@@ -607,10 +607,15 @@ ponder.on("PoidhContract:VotingResolved", async ({ event, context }) => {
   const newBountyId = LATEST_BOUNTIES_INDEX[chainId] + Number(bountyId);
   const newClaimId = LATEST_CLAIMS_INDEX[chainId] + Number(claimId);
 
-  const bounty = (await database.find(bounties, {
-    id: newBountyId,
-    chainId,
-  }))!;
+  const bounty = (await database
+    .update(bounties, {
+      id: newBountyId,
+      chainId,
+    })
+    .set({
+      isVoting: passed,
+      inProgress: !passed,
+    }))!;
 
   const claim = (await database
     .update(claims, {

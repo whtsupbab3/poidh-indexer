@@ -612,10 +612,15 @@ ponder.on("PoidhContract:VotingResolved", async ({ event, context }) => {
     chainId,
   }))!;
 
-  const claim = (await database.find(claims, {
-    id: newClaimId,
-    chainId,
-  }))!;
+  const claim = (await database
+    .update(claims, {
+      id: newClaimId,
+      chainId,
+    })
+    .set({
+      isAccepted: passed,
+      isVoting: false,
+    }))!;
 
   await database.insert(transactions).values({
     index: transactionIndex,
@@ -708,6 +713,15 @@ ponder.on("PoidhContract:VotingStarted", async ({ event, context }) => {
     round: Number(round),
   });
 
+  await database
+    .update(claims, {
+      id: newClaimId,
+      chainId,
+    })
+    .set({
+      isVoting: true,
+    });
+
   await database.insert(transactions).values({
     index: transactionIndex,
     tx: hash,
@@ -769,7 +783,7 @@ ponder.on("PoidhContract:VotingStarted", async ({ event, context }) => {
         },
         claim: {
           ...claim,
-          isVoting: claim.isVoting ?? false,
+          isVoting: true,
           isAccepted: claim.isAccepted ?? false,
         },
         otherClaimers: otherClaims.map((c) => c.issuer),

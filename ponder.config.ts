@@ -23,6 +23,10 @@ export default createConfig({
       id: 42161,
       rpc: http(process.env.ARBITRUM_RPC_URL),
     },
+    main: {
+      id: 1,
+      rpc: http(process.env.MAIN_RPC_URL),
+    },
   },
   contracts: {
     PoidhContract: {
@@ -39,6 +43,10 @@ export default createConfig({
         arbitrum: {
           address: "0x5555fa783936c260f77385b4e153b9725fef1719",
           startBlock: 423059298,
+        },
+        main: {
+          address: "0xee032bdf22b6f4262104e94420c9741590265210",
+          startBlock: 25060246,
         },
       },
     },
@@ -57,6 +65,10 @@ export default createConfig({
         arbitrum: {
           address: "0x27E117Cc9A8DA363442e7Bd0618939E3EEEACF6A",
           startBlock: 423059286,
+        },
+        main: {
+          address: "0x5c0179532dd7d5d19d5ffebc053bb2d26a065fa9",
+          startBlock: 25060245,
         },
       },
     },

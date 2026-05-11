@@ -3,23 +3,27 @@ export const POIDH_BASE_URL = "https://poidh.xyz";
 export const ARBITRUM_LAST_BOUNTY = 180;
 export const DEGEN_LAST_BOUNTY = 1197;
 export const BASE_LAST_BOUNTY = 986;
+export const MAIN_LAST_BOUNTY = 0;
 
 export const ARBITRUM_LAST_CLAIM = 434;
 export const DEGEN_LAST_CLAIM = 4532;
 export const BASE_LAST_CLAIM = 5316;
+export const MAIN_LAST_CLAIM = 0;
 
-export type ChainId = 42161 | 8453 | 666666666;
+export type ChainId = 42161 | 8453 | 666666666 | 1;
 
 export const LATEST_BOUNTIES_INDEX: Record<ChainId, number> = {
   42161: ARBITRUM_LAST_BOUNTY,
   8453: BASE_LAST_BOUNTY,
   666666666: DEGEN_LAST_BOUNTY,
+  1: MAIN_LAST_BOUNTY,
 };
 
 export const LATEST_CLAIMS_INDEX: Record<ChainId, number> = {
   42161: ARBITRUM_LAST_CLAIM,
   8453: BASE_LAST_CLAIM,
   666666666: DEGEN_LAST_CLAIM,
+  1: MAIN_LAST_CLAIM,
 };
 
 export const IGNORE_ADDRESSES = [

@@ -45,8 +45,8 @@ export default createConfig({
           startBlock: 423059298,
         },
         main: {
-          address: "0xee032bdf22b6f4262104e94420c9741590265210",
-          startBlock: 25060246,
+          address: "0xE731dFadBFf20542E10D09D26Fc71445C70d4232",
+          startBlock: 25088349,
         },
       },
     },
@@ -67,8 +67,8 @@ export default createConfig({
           startBlock: 423059286,
         },
         main: {
-          address: "0x5c0179532dd7d5d19d5ffebc053bb2d26a065fa9",
-          startBlock: 25060245,
+          address: "0x9c5F45D5e1382e4058D334d93C6c01442012a4D9",
+          startBlock: 25088348,
         },
       },
     },
